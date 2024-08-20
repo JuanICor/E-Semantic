@@ -2,7 +2,7 @@
 
 int main()
 {
-    if (true)
+    if (false)
     {
         return 0;
     }
