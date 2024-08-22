@@ -4,27 +4,26 @@ int main()
 {
     char a;
 
-    printf("Insert a letter.");
+    printf("Insert a letter: ");
     while(scanf("%c\n", &a) != 1)
     {
-        printf("Insert a letter.");
+        printf("Insert a letter: ");
     }
 
-    if (a == 'a')
+    switch (a)
     {
+    case 'a':
         printf("A");
-    }
-    else if (a == 'b')
-    {
+        break;
+    case 'b':
         printf("B");
-    }
-    else if (a == 'c')
-    {
+        break;
+    case 'c':
         printf("C");
-    }
-    else
-    {
+        break;
+    default:
         printf("Wrong Letter.");
+        break;
     }
 
     printf("\n");
