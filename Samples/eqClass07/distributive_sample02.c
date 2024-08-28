@@ -10,6 +10,10 @@ int main()
     {
         printf("Inside\n");
     }
+    else if ((a != 5 || b <= 10) && (a != 5 || c >= 10))
+    {
+        printf("Outside\n");
+    }
 
     return 0;
 }
