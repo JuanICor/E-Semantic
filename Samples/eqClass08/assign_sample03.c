@@ -3,6 +3,7 @@ int main()
     int x = 0,
         y = 16;
 
+    // Start Semantic Matching
     switch(x)
     {
         case 0:
@@ -17,6 +18,7 @@ int main()
             y = y + x;
             break;
     }
+    // End Semantic Matching
     
     return 0;
 }

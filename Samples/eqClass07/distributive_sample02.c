@@ -6,6 +6,7 @@ int main()
         b = 8,
         c = 3;
 
+    // Start Semantic Matching
     if ((a == 5 && b > 10) || (a == 5 && c < 10))
     {
         printf("Inside\n");
@@ -14,6 +15,7 @@ int main()
     {
         printf("Outside\n");
     }
-
+    // End Semantic Matching
+    
     return 0;
 }

@@ -5,11 +5,12 @@ int main()
     char a;
 
     printf("Insert a letter: ");
-    while(scanf("%c\n", &a) != 1)
+    while (scanf("%c\n", &a) != 1)
     {
         printf("Insert a letter: ");
     }
 
+    // Start Semantic Matching
     switch (a)
     {
     case 'a':
@@ -25,7 +26,8 @@ int main()
         printf("Wrong Letter.");
         break;
     }
-
+    // End Semantic Matching
+    
     printf("\n");
 
     return 0;

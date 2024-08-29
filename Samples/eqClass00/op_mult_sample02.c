@@ -7,9 +7,12 @@ int main()
     do
     {
         printf("Enter a number: ");
-    } while(scanf("%d\n", &x) != 1);
+    }
+    while(scanf("%d\n", &x) != 1);
 
+    // Start Semantic Matching
     x *= 2;
+    // End Semantic Matching
 
     printf("Your number times 2 is: %d\n", x);
 

@@ -7,10 +7,13 @@ int main()
     do
     {
         printf("Enter a number: ");
-    } while(scanf("%d\n", &x) != 1);
+    }
+    while(scanf("%d\n", &x) != 1);
 
+    // Start Semantic Matching
     x++;
-
+    // End Semantic Matching
+    
     printf("Your number plus 1: %d\n", x);
 
     return 0;

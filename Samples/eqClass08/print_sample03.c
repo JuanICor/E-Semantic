@@ -11,24 +11,13 @@ int main()
     }
 
     // Start Semantic Matching
-    if (a == 'a')
-    {
-        printf("A");
-    }
-    else if (a == 'b')
-    {
-        printf("B");
-    }
-    else if (a == 'c')
-    {
-        printf("C");
-    }
-    else
-    {
-        printf("Wrong Letter.");
-    }
+    printf("%s", (a == 'a') ? "A" :
+                   (a == 'b') ? "B" :
+                   (a == 'c') ? "C" :
+                   "Wrong Letter."
+          );
     // End Semantic Matching
-    
+
     printf("\n");
 
     return 0;

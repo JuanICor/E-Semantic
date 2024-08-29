@@ -16,6 +16,7 @@ int main()
     while (result != 1)
         result = scanf("%d\n", &x);
 
+    // Start Semantic Matching
     if(x > 10)
     {
         for(int i = 0; i < 10; ++i)
@@ -23,6 +24,7 @@ int main()
             printf("%d ", a[i]);
         }
     }
-
+    // End Semantic Matching
+    
     return 0;
 }

@@ -5,6 +5,7 @@ int main()
 {
     int x = rand() % 200;
 
+    // Start Semantic Matching
     if (x < 50 && x < 50)
     {
         printf("Outside\n");
@@ -13,6 +14,7 @@ int main()
     {
         printf("Inside\n");
     }
-
+    // End Semantic Matching
+    
     return 0;
 }

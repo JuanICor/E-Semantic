@@ -2,15 +2,19 @@
 
 int main()
 {
-    int x = 2,
-        y = 6;
+    int x = 0,
+        i = 0;
 
     // Start Semantic Matching
-    if (x > 1 && y < 5)
+    do
     {
-        printf("Inside\n");
+        x += i;
+        i++;
     }
+    while (i < 20);
     // End Semantic Matching
     
+    printf("Final value: %d\n", x);
+
     return 0;
 }
