@@ -12,6 +12,7 @@
 7. Logical Equivalences
 8. If / Else and Switch Statements
 9. Control Flow Statements
+10. Statements Permutation
 
 ## Future Works
 
