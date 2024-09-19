@@ -1,32 +1,21 @@
 from pycparser import parse_file
-import pycparser_fake_libc  #type: ignore
-
-from aux_types import *
-from typing import TypeGuard
+from pycparser.c_ast import *
+import pycparser_fake_libc          # type: ignore
+from Classes.visitors import AssignmentVisitor, FunctionBodyVisitor
 
 class ParseFile():
     def __init__(self, filename: str) -> None:
         fake_libc_arg: str = "-I" + pycparser_fake_libc.directory
         
-        self.__ast = parse_file(filename, use_cpp=True,
+        self.ast: FileAST = parse_file(filename, use_cpp=True,
                                         cpp_path='gcc',
                                         cpp_args=['-E', fake_libc_arg])
         
-    def __get_funcions_defs(self) -> list[FuncDef]:
+    def get_assignments(self) -> list[Assignment]:
+        main_visitor: FunctionBodyVisitor = FunctionBodyVisitor('main')
+        visitor: AssignmentVisitor = AssignmentVisitor()
 
-        def is_func_def(x: Union_[FuncDecl, Decl, Typedef, Pragma]) -> TypeGuard[FuncDef]:
-            return isinstance(x, FuncDef)
+        main_visitor.visit(self.ast)
+        visitor.visit(main_visitor.func_body)
 
-        return list(filter(is_func_def, self.__ast.ext))
-        
-    def __get_sentences(self) -> list[Statement | None]:
-        function_definitions: list[FuncDef] = self.__get_funcions_defs()
-        return function_definitions[-1].body.block_items
-    
-    def get_assigments(self) -> list[Assignment]:
-        sentences: list[Statement] = self.__get_sentences()
-
-        def is_assignment(x: Statement) -> TypeGuard[Assignment]:
-            return isinstance(x, Assignment)
-
-        return list(filter(is_assignment, sentences))
+        return visitor.assignments
