@@ -43,13 +43,13 @@ class TreeParser():
             return target.start_byte > sbyte and target.end_byte < ebyte
 
         if traveler.goto_first_child():
-            curr_node: Node = traveler.node
-
+            curr_node: Node = traveler.node         #type: ignore # 'goto_first_child()' returns true only if a node exists.
+                                                                  # Therefore traveler.node cannot be None
             if is_in_between(curr_node):
                 nodes_between.append(curr_node)
 
             while traveler.goto_next_sibling():
-                curr_node = traveler.node
+                curr_node = traveler.node           #type: ignore # Same reason as of line 46
 
                 if is_in_between(curr_node):
                     nodes_between.append(curr_node)
