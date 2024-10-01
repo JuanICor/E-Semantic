@@ -1,28 +1,34 @@
-import tree_sitter_c as CLanguage
-from tree_sitter import *
+import sys
 
-from typing import Final
+sys.path.append("../E-Semantic")
+
+import tree_sitter_c as CLanguage   
+from behemoth import *
+from tree_sitter import *
+import time
+
+from typing import Final, Optional, TypeGuard
 
 ENCODING: Final = "utf8"
 
 class TreeParser():
     
+    __code: bytes
+    __language: TreeLanguage
+    tree: Tree
+
     def __init__(self, filename: str) -> None:
-        self.__language: Language = Language(CLanguage.language())
+        self.__language = Language(CLanguage.language())
         
         with open(filename, "r") as file:
-            self.__code: bytes = bytes(file.read(), ENCODING)
+            self.__code = bytes(file.read(), ENCODING)
 
         parser: Parser = Parser(self.__language)
-        self.__tree: Tree = parser.parse(self.__code)
+        self.tree = parser.parse(self.__code)
     
-    def get_matches(self, query: str) -> dict[str, list[Node]]:
-        q : Query = self.__language.query(query)
-        
-        return q.captures(self.__tree.root_node)
 
-    def __goto_parent__(self, node: Node) -> TreeCursor:
-        cursor: TreeCursor = self.__tree.root_node.walk()
+    def __goto_parent__(self, node: ASTNode) -> TreeCursor:
+        cursor: TreeCursor = self.tree.root_node.walk()
 
         while cursor.goto_first_child_for_byte(node.start_byte):
             pass
@@ -31,27 +37,84 @@ class TreeParser():
 
         return cursor
     
-    def get_nodes_between(self, node1: Node, node2: Node) -> list[Node]:
+
+    def __keep_nodes_before_byte__(self, byte: int, nodes: list[ASTNode]) -> list[ASTNode]:
+        def filter_func(node: ASTNode) -> TypeGuard[ASTNode]:
+            return node.end_byte < byte
+        
+        return list(filter(filter_func, nodes))
+    
+
+    def __get_max_end_node__(self, source: list[ASTNode]) -> Optional[ASTNode]:
+        if len(source) == 0:
+            return None
+
+        target: ASTNode = source[0]
+
+        for node in source:
+            if node.end_byte > target.end_byte:
+                target = node
+
+        return target
+
+
+    def capture_nodes(self, query: QueryString, start_node: Optional[ASTNode] = None)-> CapturedNodes:
+        if start_node is None:
+            start_node = self.tree.root_node
+        
+        q: TSQuery = self.__language.query(query)
+
+        return q.captures(start_node)
+
+
+    def get_matches(self, query: QueryString, start_node: Optional[ASTNode] = None) -> MatchedNodes:
+        if start_node is None:
+            start_node = self.tree.root_node
+        
+        q : TSQuery = self.__language.query(query)
+        
+        return q.matches(start_node)
+
+
+    def get_previous_assignment_to(self, target_node: Optional[ASTNode], target: str) -> Optional[ASTNode]:
+        if target_node == self.tree.root_node or target_node is None:
+            return None
+
+        query: QueryString = f"""
+                                (assignment_expression
+                                    left: (identifier)  @lhs
+                                    right: (_)
+                                    (#eq? @lhs {target})
+                                ) @assignment
+                              """
+        
+        var_scope: TreeCursor = self.__goto_parent__(target_node)
+        captures: CapturedNodes = self.capture_nodes(query, var_scope.node)
+        possible_nodes: list[ASTNode] = self.__keep_nodes_before_byte__(target_node.start_byte, captures['assignment'])
+
+        ret_node: Optional[ASTNode] = self.__get_max_end_node__(possible_nodes)
+
+        if ret_node is None:
+            return self.get_previous_assignment_to(target_node.parent, target)
+        else:
+            return ret_node
+
+    
+    def get_nodes_between(self, node1: ASTNode, node2: ASTNode) -> list[ASTNode]:
         sbyte: int = node1.end_byte
         ebyte: int = node2.start_byte  
 
         traveler: TreeCursor = self.__goto_parent__(node1)
 
-        nodes_between: list[Node] = []
+        child_nodes: list[ASTNode] = []
 
-        def is_in_between(target: Node) -> bool:
+        def is_in_between(target: Node) -> TypeGuard[ASTNode]:
             return target.start_byte > sbyte and target.end_byte < ebyte
 
         if traveler.goto_first_child():
-            curr_node: Node = traveler.node         #type: ignore # 'goto_first_child()' returns true only if a node exists.
-                                                                  # Therefore traveler.node cannot be None
-            if is_in_between(curr_node):
-                nodes_between.append(curr_node)
-
+            child_nodes.append(traveler.node)           #type: ignore # 'goto_first_child()' verifies that there exists a child.
+                                                                      # Therefore traveler.node is never None
             while traveler.goto_next_sibling():
-                curr_node = traveler.node           #type: ignore # Same reason as of line 46
+                child_nodes.append(traveler.node)       #type: ignore # Same reason as line before
 
-                if is_in_between(curr_node):
-                    nodes_between.append(curr_node)
-
-        return nodes_between
+        return list(filter(is_in_between, child_nodes))

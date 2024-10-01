@@ -1,14 +1,46 @@
 from Classes.tree_parser import TreeParser
+from Classes.ast_to_expr import ASTExpresion
 from egraph import *
-from tree_sitter import Node as ASTNode
+from behemoth import *
 
-from typing import Final, Callable
+from typing import Final, Optional
 
 PATH: Final = "./Samples/eqClass"
 
-ArithmeticFun : type = Callable[[Arithmetics, Arithmetics], Arithmetics]
+queries: list[QueryString] = [
+    """
+    (assignment_expression
+        left: (identifier)
+        right: (binary_expression
+                    left: (identifier) @unknown
+                    right: (number_literal)
+                )
+    ) @target
+    """,
+    """
+    (assignment_expression
+        left: (identifier) @unknown
+        right: (number_literal)
+    ) @target
+    """
+]
 
-operations: dict[str, ArithmeticFun] = {'+' : sum, '*': mult, '<<': lshift}
+files: list[FileNames] = [
+    "op_mult_sample01.c",
+    "op_mult_sample02.c"
+]
+
+eq_Class: list[str] = [
+    "00"
+]
+
+query_for_file: dict[FileNames, QueryString] = dict(zip(files, queries))
+
+def print_nodes(d: CapturedNodes) -> None:
+    for l in d.values():
+        for node in l:
+            print(node)
+    
 
 def get_code_between_comments(parser: TreeParser) -> list[ASTNode]:
     query: str = '''
@@ -20,60 +52,38 @@ def get_code_between_comments(parser: TreeParser) -> list[ASTNode]:
     
     return parser.get_nodes_between(nodes[0], nodes[1])
 
-# Hacerlo una clase ('AST to Expression')
-def expression_construct(n: ASTNode) -> Arithmetics:
-    nodeType : str = n.type
+def main() -> None:
+    interpreter: ASTExpresion = ASTExpresion()
+    file1: Final = files[0]
+    file2: Final = files[1]
 
-    if nodeType == "identifier":
-        return Arithmetics.var(n.text.decode("utf8"))
+    sample01: TreeParser = TreeParser(PATH + eq_Class[0] + "/" + file1)
+    sample02: TreeParser = TreeParser(PATH + eq_Class[0] + "/" + file2)
+ 
+    s01_nodes: CapturedNodes = sample01.capture_nodes(query_for_file[file1])
+    s02_nodes: CapturedNodes = sample02.capture_nodes(query_for_file[file2])
 
-    elif nodeType == "number_literal":
-        return Arithmetics(int(n.text))
+    s01_target: ASTNode = s01_nodes["target"][0]
+    s02_target: ASTNode = s02_nodes["target"][0]
 
-    elif nodeType == "binary_expression":
-        operation: ArithmeticFun = operations.get(n.child(1).type)
-        return operation(expression_construct(n.child(0)),
-                         expression_construct(n.child(2))
-                        )
+    expr1: Expr = egraph.let("expr1", interpreter.expression_construct(s01_target))
+    expr2: Expr = egraph.let("expr2", interpreter.expression_construct(s02_target))
 
-    elif nodeType == "assignment_expression":
-        operators: set[str] = operations.keys()
-        operation: ArithmeticFun = None
+    s01_unknown: ASTNode = s01_nodes["unknown"][0]
+    s02_unknown: ASTNode = s02_nodes["unknown"][0]
 
-        for op in operators:
-            if op in n.child(1).type:
-                operation = operations.get(op)
-                break
+    s01_var: Optional[ASTNode] = sample01.get_previous_assignment_to(s01_target, s01_unknown.text.decode('utf-8'))
+    s02_var: Optional[ASTNode] = sample02.get_previous_assignment_to(s02_target, s02_unknown.text.decode('utf-8'))
 
-        temp_node: ASTNode = n.child(0)
+    if s01_var is None:
+        expr1a: Expr = egraph.let("expr1a", assignment(Arithmetics.var(s01_unknown.text.decode('utf-8')), Arithmetics(1)))
+    else:
+        expr1a: Expr = egraph.let("expr1a", interpreter.expression_construct(s01_var))
 
-        if operation is not None:
-            return assign(Arithmetics.var(temp_node.text.decode("utf8")),
-                              operation(expression_construct(n.child(0)),
-                                        expression_construct(n.child(2))
-                                       )
-                         )
-        else:
-            return assign(Arithmetics.var(temp_node.text.decode("utf8")),
-                              expression_construct(n.child(2))
-                         )
-    
-    pass
-
-if __name__ == "__main__":
-
-    sample_nums: list[str] = ["00"]
-    file1: Final = "op_mult_sample01.c"
-    file2: Final = "op_mult_sample02.c"
-
-    sample01: TreeParser = TreeParser(PATH + sample_nums[0] + "/" + file1)
-    sample02: TreeParser = TreeParser(PATH + sample_nums[0] + "/" + file2)
-
-    target_1: ASTNode = get_code_between_comments(sample01)[0]
-    target_2: ASTNode = get_code_between_comments(sample02)[0]
-
-    expr1 = egraph.let("expr1", expression_construct(target_1.child(0)))
-    expr2 = egraph.let("expr2", expression_construct(target_2.child(0)))
+    if s02_var is None:
+        expr2a: Expr = egraph.let("expr2a", assignment(Arithmetics.var(s02_unknown.text.decode('utf-8')), Arithmetics(1)))
+    else:
+        expr2a: Expr = egraph.let("expr2a", interpreter.expression_construct(s02_var))
 
     egraph.run(10)
 
@@ -82,3 +92,6 @@ if __name__ == "__main__":
         print("The Expressions are equal.")
     except Exception:
         print("The Expression are not equal.")
+
+if __name__ == "__main__":
+    main()
