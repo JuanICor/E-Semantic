@@ -2,13 +2,18 @@
 
 int main()
 {
-    // Start Semantic Matching
-    if (false)
-    {
-        return 0;
-    }
+    int x;
+    volatile int condition = 1;
 
-    int x = -1000;
+    // Start Semantic Matching
+    if (condition)
+    {
+        x = -1000;
+    }
+    else
+    {
+        x = 1000;
+    }
     // End Semantic Matching
     
     return 0;

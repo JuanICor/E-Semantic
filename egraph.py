@@ -36,7 +36,7 @@ def mult(x: Arithmetics | Unit, y: Arithmetics | Unit) -> Arithmetics:
     pass
 
 @function
-def lshift(x: Arithmetics | Unit, y: Arithmetics | Unit) -> Arithmetics:
+def lshift(x: Arithmetics | Unit, y: i64Like) -> Arithmetics:
     pass
 
 assignment: ArithmeticsRelation = relation("Assign", Arithmetics | Unit, Arithmetics | Unit)    #type: ignore
@@ -48,7 +48,7 @@ v = var("v", String)
 egraph.register(
     rewrite(sum(a, b)).to(a + b),
     rewrite(mult(a, b)).to(a * b),
-    rewrite(lshift(a, b)).to(a << b),
+    rewrite(lshift(Arithmetics(x), y)).to(Arithmetics(x << y)),
     rewrite(Arithmetics(x) + Arithmetics(y)).to(Arithmetics(x + y)),
     rewrite(Arithmetics(x) * Arithmetics(y)).to(Arithmetics(x * y)),
     rewrite(Arithmetics(x) << Arithmetics(y)).to(Arithmetics(x << y)),

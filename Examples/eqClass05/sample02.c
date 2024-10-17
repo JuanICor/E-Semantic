@@ -17,11 +17,11 @@ int main()
         result = scanf("%d\n", &x);
 
     // Start Semantic Matching
-    for(int i = 0; i < 10; ++i)
+    for(int i = 0; i < 15; ++i)
     {
-        if (x > 10)
+        if (i > 10)
         {
-            printf("%d ", a[i]);
+            break;
         }
     }
     // End Semantic Matching

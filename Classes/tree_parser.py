@@ -5,7 +5,6 @@ sys.path.append("../E-Semantic")
 import tree_sitter_c as CLanguage   
 from behemoth import *
 from tree_sitter import *
-import time
 
 from typing import Final, Optional, TypeGuard
 
