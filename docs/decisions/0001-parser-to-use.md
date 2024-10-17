@@ -1,4 +1,4 @@
-# Deciding which library to use for parsing
+# Library for parsing
 
 ## Context and Problem Statement
 
@@ -15,3 +15,11 @@ Which library enables a quick search through the code we are parsing?
 
 * PyCParcer
 * Tree_Sitter
+
+## Decision Outcome
+
+Chosen option: "Tree_Sitter", because
+
+* It's easy to use, gives the user full access to the AST.
+* Provides a power query mechanism, which allows for a easy search over the AST.
+* Already compatible with mypy
