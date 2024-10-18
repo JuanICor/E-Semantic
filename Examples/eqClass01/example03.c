@@ -2,8 +2,9 @@
 
 int main()
 {
+    volatile bool cond = false;
     // Start Semantic Matching
-    if (false)
+    if (cond)
     {
         return 0;
     }

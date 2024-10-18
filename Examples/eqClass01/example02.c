@@ -3,9 +3,9 @@
 int main()
 {
     int x;
-
+    volatile bool cond = false;
     // Start Semantic Matching
-    if (false)
+    if (cond)
     {
         x = 1000;
     }
