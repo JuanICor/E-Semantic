@@ -8,7 +8,7 @@ int main()
     {
         printf("Enter a number: ");
     }
-    while(scanf("%d\n", &x) != 1);
+    while(scanf("%d", &x) != 1);
 
     // Start Semantic Matching
     ++x;
