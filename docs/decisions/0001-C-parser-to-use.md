@@ -2,7 +2,7 @@
 
 ## Context and Problem Statement
 
-Which library provides the best tools for parsing?
+Which library provides the best tools for parsing C code?
 Which library enables a quick search through the code we are parsing?
 
 ## Decision Drivers
