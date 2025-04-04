@@ -1,52 +1,66 @@
-from Classes.process_file import ProcessFile, create_vars_mapping
-from Classes.process_egraph import (HandlerInvoker, EgraphProcessor,
-                                    LoadHandler, SubHandler, AddHandler,
-                                    StoreHandler, CallHandler,
-                                    ExtractionHandler)
+import argparse
+
+from Classes.process_file import FileProcessor
+from Classes.process_egraph import (
+    HandlerInvoker, EgraphProcessor, LoadHandler, SubHandler, AddHandler,
+    StoreHandler, CallHandler, GreaterThanHandler, LessEqualHandler,
+    TruncHandler, LabelHandler, ExtractionHandler, BranchHandler)
 from Classes.ssa_graph import SSA_basic_ruleset
-
-
-def get_file_path(number: int):
-    return f"Examples/eqClass00/simple_example0{number}.c"
 
 
 handlers = [("add", AddHandler()), ("sub", SubHandler()),
             ("load", LoadHandler()), ("store", StoreHandler()),
-            ("call", CallHandler()), ("extract", ExtractionHandler())]
+            ("call", CallHandler()), ("icmp_sgt", GreaterThanHandler()),
+            ("icmp_sle", LessEqualHandler()), ("labels", LabelHandler()),
+            ("br_cond", BranchHandler()), ("trunc", TruncHandler()),
+            ("extract", ExtractionHandler())]
 
 
-def main() -> None:
+def main(files: list[str], variable: str) -> None:
     invoker = HandlerInvoker()
-    processor = EgraphProcessor(SSA_basic_ruleset)
 
-    for id, handler in handlers:
-        invoker.register_handler(id, handler)
+    values = []
 
-    invoker.set_handlers_processor(processor)
+    invoker.register_handler_list(handlers)
 
-    for num in range(1, 3):
-        filepath = get_file_path(num)
-        file_processor = ProcessFile(filepath)
+    for filepath in files:
+        processor = EgraphProcessor(SSA_basic_ruleset)
+        invoker.set_handlers_processor(processor)
+
+        file_processor = FileProcessor(filepath)
         invoker.set_handlers_extension(filepath)
-        invoker.set_variables_mapping(create_vars_mapping(filepath))
+        invoker.set_variables_mapping(file_processor.create_var_map())
 
-        for name in file_processor.get_functions().keys():
-            blocks = file_processor.get_function_blocks(name)
+        parsed_llvm = file_processor.process_file()
 
-            if blocks is None:
+        for function in parsed_llvm["functions"]:
+            if (func_instr := function.get("instructions")) is None:
                 continue
 
-            for _, instructions in blocks.items():
-                for instr in instructions:
-                    instr_info = file_processor.get_instruction_info(instr)
-                    if instr_info != None:
-                        invoker.upload_instruction_data(instr_info)
+            for instruction in func_instr:
+                invoker.upload_instruction_data(instruction)
 
-    invoker.display_variables_value("z")
+        values.append(invoker.get_variable_value(variable))
 
-    processor._saturate_graph()
-    processor.egraph.display()
+    if values[0] == values[1]:
+        print("The expressions matched!")
 
+    else:
+        print(f"Expressions didn't match.")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Matches programs semantically.")
+    parser.add_argument("file1",
+                        type=str,
+                        help="Path to the first file")
+    parser.add_argument("file2",
+                        type=str,
+                        help="Path to the second file")
+    parser.add_argument("--variable",
+                        type=str,
+                        help="Variable to inspect")
+
+    args = parser.parse_args()
+
+    main(files=[args.file1, args.file2], variable=args.variable)
