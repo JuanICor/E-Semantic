@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "samerules"
+version = "0.1.0"
+description = "\"Thesis Project based on creating a program capable of matching two .c files semantically using E-Graphs\""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+egglog = "^8.0.1"
+schema = "^0.7.7"
+
+# Parser
+llvm_parser =  { version = "0.1.0", source = "llvm_parser" }
+
+[tool.poetry.dev-dependencies]
+pytest = {version = "^7.2.0", source = "pypi_org", python = ">=3.10,<4.0"}
+pytest-mock = {version = "^3.10.0", source = "pypi_org", python = ">=3.10,<4.0"}
+mypy = {version = "^1.0.0", source = "pypi_org", python = ">=3.10,<4.0"}
+
+[[tool.poetry.source]]
+name = "pypi_org"
+url = "https://pypi.org/simple/"
+
+[[tool.poetry.source]]
+name = "llvm_parser"
+url = "https://gitlab.com/api/v4/projects/67808923/packages/pypi/simple/"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
