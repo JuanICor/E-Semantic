@@ -1,61 +1,30 @@
-import re
-from collections.abc import Iterable
 from pathlib import Path
-from typing import TypeAlias, Final
+from tempfile import TemporaryDirectory
 
-from llvm_parser import Compiler, Parser, ParseResult
-
-MatchedTuple: TypeAlias = tuple[str, str]
-VarMap: TypeAlias = dict[str, str]
+from llvm_parser import Compiler, LlvmData, Parser
+from llvm_parser.llvm_semantics import LlvmCFG
 
 
 class FileProcessor:
-
-    def __init__(self, file_to_process: str) -> None:
-        self.file = Path(file_to_process)
-        self.compiler = Compiler()
-
-    def process_file(self) -> ParseResult:
-
-        if self.compiler.compiled_file_exists():
-            compiled_llvm = self.compiler.strip_debug()
-        else:
-            compiled_llvm = self.compiler.compile_file(self.file)
-
-        parse_result = Parser().parse_file(compiled_llvm)
-
-        self.compiler.rm_compiled_file()
-
-        return parse_result
-
-
-    def create_var_map(self) -> VarMap:
-        compiled_file = self.compiler.compile_file(self.file, debug=True)
-
-        AMI_PATTERN: Final = r"@[\w\.]+\(metadata.*?(%\d+), metadata.*?(!\d+),.*\)"  # Assigned Metadata Instruction
-        MN_PATTERN: Final = r"(!\d+).+?!DILocalVariable\(name: \"(\S+)\".*?\)"  # Metadata Node
-
-        file_content = compiled_file.read_text(encoding='utf-8')
-
-        registers_metadata = re.findall(AMI_PATTERN, file_content)
-        variables_metadata = re.findall(MN_PATTERN, file_content)
-
-        joined_values = self._inner_join(
-            variables_metadata, map(lambda x: x[::-1], registers_metadata))
-
-        cured_regs = map(lambda t: (t[0], t[1]), joined_values)
-
-        return dict(cured_regs)
+    """
+    A class to process files by compiling and parsing them using the specified tools.
+    """
 
     @staticmethod
-    def _inner_join(iter_a: Iterable[MatchedTuple],
-                    iter_b: Iterable[MatchedTuple]) -> Iterable:
-        temp_dict: dict[str, MatchedTuple] = {}
+    def _get_absolute_path(file: str) -> Path:
+        return Path(file).resolve()
 
-        for item in iter_b:
-            temp_dict[item[0]] = item
+    @staticmethod
+    def _compile_file(filepath: Path,
+                      output_dir: TemporaryDirectory[str]) -> Path:
+        compiler = Compiler(output_dir)
+        return compiler.compile_file(filepath)
 
-        for item in iter_a:
-            matched_items = temp_dict.get(item[0])
-            if matched_items is not None:
-                yield item[1:] + matched_items[1:]
+    def get_file_llvm_data(self, file: str) -> LlvmData:
+        parser = Parser(LlvmCFG)
+        abs_filepath = self._get_absolute_path(file)
+
+        with TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            compiled_filepath = self._compile_file(abs_filepath, temp_dir)
+
+            return parser.parse_file(compiled_filepath)

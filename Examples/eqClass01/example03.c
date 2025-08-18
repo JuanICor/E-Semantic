@@ -12,5 +12,5 @@ int main()
     int x = -1000;
     // End Semantic Matching
     
-    return 0;
+    return x;
 }

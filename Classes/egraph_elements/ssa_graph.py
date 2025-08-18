@@ -1,4 +1,7 @@
-# mypy: disable-error-code=empty-body
+"""
+First approach when trying to develop the tool.
+Is not longer used.
+"""
 
 from __future__ import annotations
 from egglog import (Expr, i64Like, StringLike, i64, rewrite, rule, vars_, var,

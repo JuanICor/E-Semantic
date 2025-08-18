@@ -18,13 +18,13 @@ def test_handler_execution():
 
     assert handler._extension == "test"
 
-    handler.execute({"res_reg": "%5", "arg_1": "%3"})
+    handler.upload({"res_reg": "%5", "arg_1": "%3"})
 
     mock_processor.write_load_or_store.assert_called_once_with(
         "%5.test", "%3.test")
 
     with pytest.raises(ValueError):
-        handler.execute({"res_reg": "%9", "arg": "%1"})
+        handler.upload({"res_reg": "%9", "arg": "%1"})
 
 
 def test_invoker():
@@ -54,7 +54,7 @@ def test_invoker():
     mock_add_handler.set_extension.assert_called_once_with("test")
     mock_store_handler.set_extension.assert_called_once_with("test")
 
-    invoker.upload_instruction_data(
+    invoker.upload_instruction(
         {"add": {
             "res_reg": "%6",
             "arg_1": "%2",
@@ -90,7 +90,7 @@ def test_integration(mock_egraph_class):
     invoker.set_handlers_extension("test")
 
     # Execution
-    invoker.upload_instruction_data({"store": {"res_reg": "%2", "arg_1": 0}})
+    invoker.upload_instruction({"store": {"res_reg": "%2", "arg_1": 0}})
 
     assert processor._egraph_id == 1
     assert list(processor._regs_mapping.keys()) == ["%2.test"]
@@ -98,8 +98,8 @@ def test_integration(mock_egraph_class):
 
     mock_egraph_instance.let.assert_called
 
-    invoker.upload_instruction_data({"store": {"res_reg": "%3", "arg_1": 5}})
-    invoker.upload_instruction_data({"sub": {"res_reg": "%4", "arg_1": "%2", "arg_2": "%3"}})
+    invoker.upload_instruction({"store": {"res_reg": "%3", "arg_1": 5}})
+    invoker.upload_instruction({"sub": {"res_reg": "%4", "arg_1": "%2", "arg_2": "%3"}})
 
     assert processor._egraph_id == 3
     assert list(processor._regs_mapping.keys()) == ["%2.test", "%3.test", "%4.test"]

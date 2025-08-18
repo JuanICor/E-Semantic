@@ -3,7 +3,6 @@ from egglog import *
 
 egraph = EGraph()
 
-@egraph.class_
 class Arithmetics(Expr):
     def __init__(self, value: i64Like) -> None:
         pass

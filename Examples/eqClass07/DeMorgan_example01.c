@@ -3,8 +3,8 @@
 
 int main()
 {
-    int x = rand() % 100,
-        y = rand() % 100;
+    int x = 53,
+        y = 35;
 
     // Start Semantic Matching
     if (x > 50 && y <= 50)
@@ -16,6 +16,6 @@ int main()
         printf("Outside\n");
     }
     // End Semantic Matching
-    
+
     return 0;
 }

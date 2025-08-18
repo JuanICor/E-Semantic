@@ -47,7 +47,7 @@ def test_process_file(mock_compiler_class, mock_parser_class):
 
     file_processor = FileProcessor("")
 
-    parse_result = file_processor.process_file()
+    parse_result = file_processor.parse_file()
 
     assert parse_result == {"mock_instruction": "mock_value"}
 

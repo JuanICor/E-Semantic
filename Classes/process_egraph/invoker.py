@@ -1,57 +1,38 @@
 """
 Invoker class for the egraph process
 """
-from typing import TypeAlias
-
 from llvm_parser import ParseResult
+from Classes.egraph_elements import Instruction, Trace
 
-from Classes.process_egraph.handlers import InstructionHandlers, NoneHandler
-from Classes.process_egraph.processor import EgraphProcessor
+from .processor import EgraphProcessor
+from .handler_factory import HandlerFactory
 
-HandlerList: TypeAlias = list[tuple[str, InstructionHandlers]]
-HandlerDict: TypeAlias = dict[str, InstructionHandlers]
 
 class HandlerInvoker:
-    var_mapping: dict[str, str]
-    _handlers: HandlerDict
 
-    def __init__(self) -> None:
-        self.var_mapping = {}
-        self._handlers = {}
-
-    def register_handler(self, handler_id: str, handler: InstructionHandlers) -> None:
-        self._handlers[handler_id] = handler
-
-    def register_handler_list(self, handler_list: HandlerList) -> None:
-        self._handlers = dict(handler_list)
+    def __init__(self, processor: EgraphProcessor) -> None:
+        self.var_mapping: dict[str, str] = {}
+        self._handlers = HandlerFactory()
+        self._processor = processor
 
     def set_variables_mapping(self, var_map: dict[str, str]) -> None:
         self.var_mapping = var_map
 
-    def set_handlers_extension(self, extension: str) -> None:
-        for handler in self._handlers.values():
-            handler.set_extension(extension)
+    def upload_instruction(self, instruction_data: ParseResult) -> Instruction:
+        handler = self._handlers.get_handler(instruction_data.pop('opcode'),
+                                             self._processor)
 
-    def set_handlers_processor(self, processor: EgraphProcessor) -> None:
-        for handler in self._handlers.values():
-            handler.set_processor(processor)
+        return handler.upload(instruction_data)
 
-    def upload_instruction_data(self, instruction_data: ParseResult) -> None:
-        opcode, instr_value = next(iter(instruction_data.items()))
-        handler = self._handlers.get(opcode, NoneHandler())
+    def upload_trace(self, instructions: list[Instruction]) -> Trace:
+        handler = self._handlers.get_handler("trace", self._processor)
 
-        handler.execute(instr_value)
+        return handler.upload({"instructions": instructions})
 
-    def upload_block_instrs(self, label: str, instrs: list[str]) -> None:
-        handler = self._handlers["label_block"]
+    def upload_function(self, function_name: str, traces: list[Trace]) -> None:
+        handler = self._handlers.get_handler("function", self._processor)
 
-        handler.execute({"label": label, "instructions": instrs})
-
-    def upload_blocks(self, labels: list[str]) -> None:
-        handler = self._handlers["labels"]
-
-        for label in labels:
-            handler.execute({"label": label})
+        handler.upload({"name": function_name, "traces": traces})
 
     def get_variable_value(self, variable: str) -> list[str]:
         register = self.var_mapping[variable]

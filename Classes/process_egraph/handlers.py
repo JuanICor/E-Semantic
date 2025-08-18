@@ -5,23 +5,19 @@ Command classes for the egraph processor
 from abc import ABC, abstractmethod
 from typing import Any, cast
 
-from Classes.process_egraph.processor import EgraphProcessor
-from Classes.ssa_graph import SSA
+from egglog import Expr
 from schema import Schema, Or
 from typing_extensions import override
 
+from Classes.process_egraph.processor import EgraphProcessor
+from Classes.egraph_elements import Instruction
 
-class InstructionHandlers(ABC):
 
-    def __init__(self) -> None:
-        self._processor: EgraphProcessor
-        self._extension: str
+class GraphElementHandlers(ABC):
 
-    def set_processor(self, processor: EgraphProcessor) -> None:
+    def __init__(self, processor: EgraphProcessor) -> None:
         self._processor = processor
-
-    def set_extension(self, extension: str) -> None:
-        self._extension = extension
+        self._extension = ""
 
     def _generate_unique_id(self, register: str | int) -> str:
         if isinstance(register, str):
@@ -30,11 +26,11 @@ class InstructionHandlers(ABC):
         return register
 
     @abstractmethod
-    def execute(self, instr: dict[str, Any]) -> None:
+    def upload(self, data: dict[str, Any]) -> Expr:
         ...
 
 
-class LoadHandler(InstructionHandlers):
+class LoadHandler(GraphElementHandlers):
 
     @staticmethod
     def _check_args(instruction: dict[str, Any]) -> None:
@@ -50,16 +46,16 @@ class LoadHandler(InstructionHandlers):
             raise ValueError("Invalid instruction passed to the load handler")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        self._check_args(instr)
+    def upload(self, data: dict[str, Any]) -> Expr:
+        self._check_args(data)
 
-        res_id = self._generate_unique_id(cast(str, instr["ret_reg"]))
-        arg_1_id = self._generate_unique_id(cast(str, instr["arg_1"]))
+        res_id = self._generate_unique_id(cast(str, data["ret_reg"]))
+        arg_1_id = self._generate_unique_id(cast(str, data["arg_1"]))
 
-        self._processor.write_load_or_store(res_id, arg_1_id)
+        return self._processor.write_load_or_store(res_id, arg_1_id)
 
 
-class StoreHandler(InstructionHandlers):
+class StoreHandler(GraphElementHandlers):
 
     @staticmethod
     def _check_args(instruction: dict[str, Any]) -> None:
@@ -76,16 +72,16 @@ class StoreHandler(InstructionHandlers):
                 "Invalid instruction passed to the store handler.")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        self._check_args(instr)
+    def upload(self, data: dict[str, Any]) -> Expr:
+        self._check_args(data)
 
-        res_id = self._generate_unique_id(cast(str, instr["ret_reg"]))
-        arg_1_id = self._generate_unique_id(cast(str | int, instr["arg_1"]))
+        res_id = self._generate_unique_id(cast(str, data["ret_reg"]))
+        arg_1_id = self._generate_unique_id(cast(str | int, data["arg_1"]))
 
-        self._processor.write_load_or_store(res_id, arg_1_id)
+        return self._processor.write_load_or_store(res_id, arg_1_id)
 
 
-class CallHandler(InstructionHandlers):
+class CallHandler(GraphElementHandlers):
 
     @staticmethod
     def _check_args(instruction: dict[str, Any]) -> None:
@@ -100,15 +96,15 @@ class CallHandler(InstructionHandlers):
             raise ValueError("Invalid arguments for call handler.")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        self._check_args(instr)
+    def upload(self, data: dict[str, Any]) -> Expr:
+        self._check_args(data)
 
-        res_id = self._generate_unique_id(cast(str, instr["ret_reg"]))
+        res_id = self._generate_unique_id(cast(str, data["ret_reg"]))
 
-        self._processor.write_function(res_id, instr["function"])
+        return self._processor.write_function(res_id, data["function"])
 
 
-class UnaryOpsHandler(InstructionHandlers):
+class UnaryOpsHandler(GraphElementHandlers):
 
     def _check_args(self, instruction: dict[str, Any]) -> None:
         schema = Schema(
@@ -124,27 +120,27 @@ class UnaryOpsHandler(InstructionHandlers):
                 f"Invalid instruction passed to {self.__class__.__name__}")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        self._check_args(instr)
+    def upload(self, data: dict[str, Any]) -> Expr:
+        self._check_args(data)
 
-        res_id = self._generate_unique_id(cast(str, instr["ret_reg"]))
-        arg_1_id = self._generate_unique_id(cast(str | int, instr["arg_1"]))
+        res_id = self._generate_unique_id(cast(str, data["ret_reg"]))
+        arg_1_id = self._generate_unique_id(cast(str | int, data["arg_1"]))
 
-        self._processor.write_unary_op(self.operation, res_id, arg_1_id)
+        return self._processor.write_unary_op(self.operation, res_id, arg_1_id)
 
     @abstractmethod
-    def operation(self, expr: SSA) -> SSA:
+    def operation(self, expr: Instruction) -> Instruction:
         ...
 
 
 class TruncHandler(UnaryOpsHandler):
 
     @override
-    def operation(self, expr: SSA) -> SSA:
+    def operation(self, expr: Instruction) -> Instruction:
         return expr
 
 
-class BinaryOpsHandler(InstructionHandlers):
+class BinaryOpsHandler(GraphElementHandlers):
 
     def _check_args(self, instruction: dict[str, Any]) -> None:
         schema = Schema(
@@ -161,32 +157,35 @@ class BinaryOpsHandler(InstructionHandlers):
                 f"Invalid instruction passed to {self.__class__.__name__}")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        self._check_args(instr)
+    def upload(self, data: dict[str, Any]) -> Expr:
+        self._check_args(data)
 
-        res_id = self._generate_unique_id(cast(str, instr["ret_reg"]))
-        arg_1_id = self._generate_unique_id(cast(str | int, instr["arg_1"]))
-        arg_2_id = self._generate_unique_id(cast(str | int, instr["arg_2"]))
+        res_id = self._generate_unique_id(cast(str, data["ret_reg"]))
+        arg_1_id = self._generate_unique_id(cast(str | int, data["arg_1"]))
+        arg_2_id = self._generate_unique_id(cast(str | int, data["arg_2"]))
 
-        self._processor.write_binary_op(self.operation, res_id, arg_1_id,
-                                        arg_2_id)
+        return self._processor.write_binary_op(self.operation, res_id,
+                                               arg_1_id, arg_2_id)
 
     @abstractmethod
-    def operation(self, left_expr: SSA, right_expr: SSA) -> SSA:
+    def operation(self, left_expr: Instruction,
+                  right_expr: Instruction) -> Instruction:
         ...
 
 
 class AddHandler(BinaryOpsHandler):
 
     @override
-    def operation(self, left_expr: SSA, right_expr: SSA) -> SSA:
+    def operation(self, left_expr: Instruction,
+                  right_expr: Instruction) -> Instruction:
         return left_expr + right_expr
 
 
 class SubHandler(BinaryOpsHandler):
 
     @override
-    def operation(self, left_expr: SSA, right_expr: SSA) -> SSA:
+    def operation(self, left_expr: Instruction,
+                  right_expr: Instruction) -> Instruction:
         return left_expr - right_expr
 
 
@@ -200,18 +199,20 @@ class MultHandler(BinaryOpsHandler):
 class GreaterThanHandler(BinaryOpsHandler):
 
     @override
-    def operation(self, left_expr: SSA, right_expr: SSA) -> SSA:
+    def operation(self, left_expr: Instruction,
+                  right_expr: Instruction) -> Instruction:
         return left_expr > right_expr
 
 
 class LessEqualHandler(BinaryOpsHandler):
 
     @override
-    def operation(self, left_expr: SSA, right_expr: SSA) -> SSA:
+    def operation(self, left_expr: Instruction,
+                  right_expr: Instruction) -> Instruction:
         return left_expr <= right_expr
 
 
-class LabelInstructionsHandler(InstructionHandlers):
+class LabelInstructionsHandler(GraphElementHandlers):
 
     @staticmethod
     def _check_args(instruction: dict[str, Any]) -> None:
@@ -225,18 +226,19 @@ class LabelInstructionsHandler(InstructionHandlers):
                 f"Invalid instruction passed to label instruction handler")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
+    def upload(self, data: dict[str, Any]) -> Expr:
 
-        label_id = self._generate_unique_id(instr["label"])
+        label_id = self._generate_unique_id(data["label"])
 
         regs_id = []
 
-        for reg in instr["instructions"]:
+        for reg in data["instructions"]:
             regs_id.append(self._generate_unique_id(reg))
 
         self._processor.register_label_code(label_id, regs_id)
 
-class BranchHandler(InstructionHandlers):
+
+class BranchHandler(GraphElementHandlers):
 
     @staticmethod
     def _check_args(instruction: dict[str, Any]) -> None:
@@ -254,36 +256,40 @@ class BranchHandler(InstructionHandlers):
                 f"Invalid arguments for branch handler. {instruction}")
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        self._check_args(instr)
+    def upload(self, data: dict[str, Any]) -> Expr:
+        self._check_args(data)
 
-        condition = self._generate_unique_id(cast(str, instr["ret_reg"]))
-        label1_id = self._generate_unique_id(cast(str | int, instr["arg_1"]))
-        label2_id = self._generate_unique_id(cast(str | int, instr["arg_2"]))
+        condition = self._generate_unique_id(cast(str, data["ret_reg"]))
+        label1_id = self._generate_unique_id(cast(str | int, data["arg_1"]))
+        label2_id = self._generate_unique_id(cast(str | int, data["arg_2"]))
 
         self._processor.write_cond_branch(condition, label1_id, label2_id)
 
 
-class NoneHandler(InstructionHandlers):
+class TraceHandler(GraphElementHandlers):
 
     @override
-    def execute(self, _instr: dict[str, Any]) -> None:
-        None
+    def upload(self, data: dict[str, Any]) -> Expr:
+        ...
 
 
-class LabelHandler(InstructionHandlers):
-
-    @override
-    def execute(self, instr: dict[str, Any]) -> None:
-        label_id = self._generate_unique_id(cast(str, instr["label"]))
-
-        self._processor.register_blocks(label_id)
-
-
-class ExtractionHandler(InstructionHandlers):
+class FunctionHandler(GraphElementHandlers):
 
     @override
-    def execute(self, instr: dict[str, Any]) -> None:
+    def upload(self, data: dict[str, Any]) -> Expr:
+        ...
+
+class ExtractionHandler(GraphElementHandlers):
+
+    @override
+    def upload(self, instr: dict[str, Any]) -> None:
         var_id = self._generate_unique_id(cast(str, instr["extract_reg"]))
 
         return self._processor.extract_expression(var_id)
+
+
+class NoneHandler(GraphElementHandlers):
+
+    @override
+    def upload(self, _instr: dict[str, Any]) -> None:
+        None

@@ -14,6 +14,6 @@ int main()
         x = 1000;
     }
     // End Semantic Matching
-    
-    return 0;
+
+    return x;
 }
