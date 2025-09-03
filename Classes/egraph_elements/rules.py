@@ -1,132 +1,91 @@
 from __future__ import annotations
 from typing import Iterable
 
-from egglog import ruleset, unstable_combine_rulesets, Unit
-from egglog.egraph import rewrite, rule, eq, union, set_, birewrite, delete
-from egglog.builtins import (i64, String, Bool, Vec, Map, Set)
+from egglog import ruleset, unstable_combine_rulesets
+from egglog.egraph import rewrite, ne, eq
+from egglog.builtins import i64, Vec, String
 
-from .types import (Function, Trace, State, Instruction, Operand, Var,
-                    is_declaration, eval_instructions, semantic_function)
-
-
-@ruleset
-def Function_rules(name: String, name2: String, Trs: Set[Trace]) -> Iterable:
-    yield rule(Function(name, Set[Trace].empty())).then(
-        is_declaration(Function(name, Set[Trace].empty())))
-
-    yield rule(Function(name, Trs), Function(name2, Trs)).then(
-        union(Function(name, Trs)).with_(Function(name2, Trs)))
+from .nodes import (Function, Leaf, load, store, alloca, add, sub, mul, shl,
+                    gamma, neg, truncate, equals)
 
 
 @ruleset
-def Trace_ruleset(Instrs: Vec[Instruction], Instrs2: Vec[Instruction],
-                  state: State, state2: State, var: Var) -> Iterable:
-    yield rule(Trace(Instrs, State(Map[Var, Operand].empty()))).then(
-        union(State(Map[Var, Operand].empty())).with_(
-            eval_instructions(Instrs, State(Map[Var, Operand].empty()),
-                              i64(0))))
-
-    yield rule(Trace(Instrs, state), Trace(Instrs2, state)).then(
-        union(Trace(Instrs, state)).with_(Trace(Instrs2, state)))
-
-    yield rule(Trace(Instrs, state),
-               Instrs.contains(Instruction.ret(var))).then(
-                   set_(Trace(Instrs, state).return_value()).to(state[var]))
-
-    yield rewrite(Trace(Instrs, state)).to(
-        Trace(Instrs2, state2),
-        eq(Trace(Instrs, state).return_value()).to(
-            Trace(Instrs2, state2).return_value()))
-
-
-@ruleset
-def State_ruleset(key: Var, value: Operand, relation: Map[Var, Operand],
-                  state: State) -> Iterable:
-    yield rewrite(State.empty()).to(State(Map[Var, Operand].empty()))
-
-    yield rewrite(State(relation)[key]).to(relation[key],
-                                           relation.contains(key))
-
-    yield rule(State(relation).insert(Instruction(key, value))).then(
-        union(State(relation).insert(Instruction(key, value))).with_(
-            State(relation.insert(key, semantic_function(value, relation)))))
-
-    yield rule(state.insert(Instruction(key, value))).then(
-        set_(state.insert(Instruction(key, value)).contains(key)).to(Unit()))
-
-
-@ruleset
-def Integers_rules(x: i64, y: i64) -> Iterable:
-    yield rewrite(Operand.integer(x) + Operand.integer(y)).to(
-        Operand.integer(x + y))
-
-    yield rewrite(Operand.integer(x) * Operand.integer(y)).to(
-        Operand.integer(x * y))
-
-    yield rewrite(Operand.integer(x) - Operand.integer(y)).to(
-        Operand.integer(x - y))
-
-    yield rewrite(Operand.integer(x) << Operand.integer(y)).to(
-        Operand.integer(x << y))
-
-
-@ruleset
-def Boolean_rules(b: Bool, b1: Bool) -> Iterable:
-    yield birewrite(Operand.boolean(b) | Operand.boolean(b1)).to(
-        Operand.boolean(b1) | Operand.boolean(b))
-
-    yield birewrite(Operand.boolean(b) & Operand.boolean(b1)).to(
-        Operand.boolean(b1) & Operand.boolean(b))
-
-    yield rewrite(Operand.boolean(b) | Operand.boolean(True)).to(
-        Operand.boolean(True))
-
-    yield rewrite(Operand.boolean(b) | Operand.boolean(Bool(False))).to(
-        Operand.boolean(b))
-
-    yield rewrite(Operand.boolean(b) & Operand.boolean(Bool(True))).to(
-        Operand.boolean(b))
-
-    yield rewrite(Operand.boolean(b) & Operand.boolean(Bool(False))).to(
-        Operand.boolean(False))
-
-
-@ruleset
-def Evaluation_rules(state: State, Instrs: Vec[Instruction],
-                     counter: i64) -> Iterable:
-
-    yield rewrite(eval_instructions(Instrs, state, counter)).to(
-        state,
-        eq(Instrs.length() - 1).to(counter))
-
-    yield rule(eval_instructions(Instrs, state, counter), (Instrs.length() - 1)
-               > counter).then(
-                   set_(eval_instructions(Instrs, state, counter)).to(
-                       eval_instructions(Instrs, state.insert(Instrs[counter]),
-                                         counter + 1)))
-
-
-@ruleset
-def Semantic_function_rules(relation: Map[Var, Operand], x: i64, b: Bool,
-                            var: Var, O1: Operand, O2: Operand) -> Iterable:
+def function_ruleset(name: String, roots: Vec[Leaf]) -> Iterable:
     return [
-        rewrite(semantic_function(Operand.integer(x),
-                                  relation)).to(Operand.integer(x)),
-        rewrite(semantic_function(Operand.boolean(b),
-                                  relation)).to(Operand.boolean(b)),
-        rewrite(semantic_function(Operand(var), relation)).to(relation[var]),
-        rewrite(semantic_function(O1 + O2, relation)).to(
-            semantic_function(O1, relation) + semantic_function(O2, relation)),
-        rewrite(semantic_function(O1 - O2, relation)).to(
-            semantic_function(O1, relation) - semantic_function(O2, relation)),
-        rewrite(semantic_function(O1 * O2, relation)).to(
-            semantic_function(O1, relation) * semantic_function(O2, relation)),
-        rewrite(semantic_function(O1 << O2, relation)).
-        to(semantic_function(O1, relation) << semantic_function(O2, relation)),
+        rewrite(Function(name, roots)).to(roots[0],
+                                        roots.length() <= i64(1)),
     ]
 
 
-graph_ruleset = unstable_combine_rulesets(Semantic_function_rules,
-                                          Evaluation_rules, Function_rules,
-                                          Trace_ruleset, State_ruleset,
-                                          Integers_rules, Boolean_rules)
+@ruleset
+def arithmetic_ruleset(x: i64, y: i64, l1: Leaf, l2: Leaf,
+                       l3: Leaf) -> Iterable:
+    return [
+        # Simple Reduction
+        rewrite(add(Leaf.int(x), Leaf.int(y))).to(Leaf.int(x + y)),
+        rewrite(sub(Leaf.int(x), Leaf.int(y))).to(Leaf.int(x - y)),
+        rewrite(mul(Leaf.int(x), Leaf.int(y))).to(Leaf.int(x * y)),
+        # Arithmetic Relations
+        rewrite(add(l1, l1)).to(mul(l1, Leaf.int(2))),
+        rewrite(add(l1, l1)).to(shl(l1, Leaf.int(1))),
+        rewrite(mul(l1, Leaf.int(4))).to(shl(l1, Leaf.int(2))),
+        # Integer Commitativity
+        rewrite(add(l1, l2)).to(add(l2, l1)),
+        rewrite(mul(l1, l2)).to(mul(l2, l1)),
+        # Integer Assosiativity
+        rewrite(add(l1, add(l2, l3))).to(add(add(l1, l2), l3))
+    ]
+
+
+@ruleset
+def boolean_ruleset(b: Leaf) -> Iterable:
+    return [
+        # ¬
+        rewrite(neg(neg(b))).to(b),
+        rewrite(neg(Leaf.bool(True))).to(Leaf.bool(False)),
+        rewrite(neg(Leaf.bool(False))).to(Leaf.bool(True)),
+        rewrite(neg(Leaf.int(0))).to(Leaf.int(1)),
+        rewrite(neg(Leaf.int(1))).to(Leaf.int(0)),
+        # ==
+        rewrite(equals(b, b)).to(Leaf.bool(True))
+    ]
+
+
+@ruleset
+def memory_ruleset(data: Leaf, ptr: Leaf, ptr2: Leaf, state: Leaf) -> Iterable:
+    return [
+        rewrite(load(ptr, store(ptr2, data, state))).to(load(ptr, state)),
+        rewrite(load(ptr, store(ptr, data, state))).to(data)
+    ]
+
+
+@ruleset
+def gated_operands_ruleset(cond: Leaf, truev: Leaf, falsev: Leaf,
+                           x: i64) -> Iterable:
+    return [
+        # Gamma Reduction
+        rewrite(gamma(Leaf.bool(True), truev, falsev)).to(truev),
+        rewrite(gamma(Leaf.bool(False), truev, falsev)).to(falsev),
+        rewrite(gamma(Leaf.int(x), truev,
+                      falsev)).to(truev,
+                                  ne(Leaf.int(x)).to(Leaf.int(0))),
+        rewrite(gamma(Leaf.int(x), truev,
+                      falsev)).to(falsev,
+                                  eq(Leaf.int(x)).to(Leaf.int(0))),
+        # Branch Changes
+        rewrite(gamma(cond, truev, falsev)).to(gamma(neg(cond), falsev,
+                                                     truev)),
+    ]
+
+
+@ruleset
+def conversion_operands_ruleset(x: Leaf) -> Iterable:
+    return [
+        rewrite(truncate(x)).to(x),
+    ]
+
+
+graph_ruleset = unstable_combine_rulesets(arithmetic_ruleset, boolean_ruleset,
+                                          memory_ruleset,
+                                          gated_operands_ruleset,
+                                          conversion_operands_ruleset)

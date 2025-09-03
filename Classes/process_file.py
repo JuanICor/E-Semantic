@@ -11,7 +11,7 @@ class FileProcessor:
     """
 
     @staticmethod
-    def _get_absolute_path(file: str) -> Path:
+    def _get_absolute_path(file: str | Path) -> Path:
         return Path(file).resolve()
 
     @staticmethod
@@ -20,7 +20,7 @@ class FileProcessor:
         compiler = Compiler(output_dir)
         return compiler.compile_file(filepath)
 
-    def get_file_llvm_data(self, file: str) -> LlvmData:
+    def get_file_llvm_data(self, file: Path) -> LlvmData:
         parser = Parser(LlvmCFG)
         abs_filepath = self._get_absolute_path(file)
 
