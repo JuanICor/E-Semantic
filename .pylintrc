@@ -1,3 +1,8 @@
+[MASTER]
+
+ignored-modules=rustworkx
+ignore-paths=^.*/Classes/egraph_elements/.*$
+
 [BASIC]
 
 disable=missing-module-docstring,
