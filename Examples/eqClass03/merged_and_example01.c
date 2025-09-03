@@ -1,13 +1,16 @@
+#include <stdio.h>
+
 int main()
 {
-    int arr[10][10];
+    int x = 2,
+        y = 6;
 
     // Start Semantic Matching
-    for(int i = 0; i < 10; ++i)
+    if (x > 1)
     {
-        for(int j = 0; j < 10; ++j)
+        if (y < 5)
         {
-            arr[i][j] = i + j;
+            printf("Inside\n");
         }
     }
     // End Semantic Matching

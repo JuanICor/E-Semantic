@@ -18,7 +18,7 @@ int main()
     // Start Semantic Matching
     y = increment(&y);
     // End Semantic Matching
-    
+
     printf("Return Value: %d\n", y);
 
     return 0;

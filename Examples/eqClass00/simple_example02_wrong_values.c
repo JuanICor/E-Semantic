@@ -9,7 +9,7 @@ int main()
     y = 6;
     z = -(y - x);
     // End Semantic Matching
-    
+
     printf("z = %d\n", z);
 
     return 0;

@@ -8,6 +8,6 @@ int main()
     // Start Semantic Matching
     y = (x > 5) ? y + x : y - x;
     // End Semantic Matching
-    
+
     return 0;
 }

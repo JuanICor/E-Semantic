@@ -8,7 +8,7 @@ int main()
     // Start Semantic Matching
     x = x1 + x2 - 6 + x3;
     // End Semantic Matching
-    
+
     printf("z = %d\n", x);
 
     return 0;

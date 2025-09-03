@@ -25,6 +25,6 @@ int main()
         }
     }
     // End Semantic Matching
-    
+
     return 0;
 }

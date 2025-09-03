@@ -20,6 +20,6 @@ int main()
         printf("Outside\n");
     }
     // End Semantic Matching
-    
+
     return 0;
 }

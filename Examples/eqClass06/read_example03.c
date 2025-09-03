@@ -18,8 +18,6 @@ int main()
 
     // Start Semantic Matching
     y = increment(ptr);
-    // End Semantic Matching
-    
     printf("Return Value: %d\n", y);
 
     return 0;

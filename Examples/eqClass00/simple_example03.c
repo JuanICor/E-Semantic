@@ -2,15 +2,13 @@
 
 int main()
 {
-    int x = 2,
-        y = 6;
+    int z;
 
     // Start Semantic Matching
-    if (x > 1 && y < 5)
-    {
-        printf("Inside\n");
-    }
+    z = 2;
     // End Semantic Matching
-    
+
+    printf("z = %d\n", z);
+
     return 0;
 }

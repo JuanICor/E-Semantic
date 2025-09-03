@@ -1,16 +1,12 @@
 #include <stdio.h>
-#include <stdlib.h>
 
 int main()
 {
-    int x = rand() % 200;
+    int x = 2,
+        y = 6;
 
     // Start Semantic Matching
-    if (x < 50 && x < 50)
-    {
-        printf("Outside\n");
-    }
-    else if (x >= 50 || x >= 50)
+    if (x > 1 || y < 5)
     {
         printf("Inside\n");
     }
