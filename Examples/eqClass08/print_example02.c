@@ -27,7 +27,7 @@ int main()
         break;
     }
     // End Semantic Matching
-    
+
     printf("\n");
 
     return 0;

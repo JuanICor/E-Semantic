@@ -2,12 +2,14 @@
 
 int main()
 {
-    int x = 1,
-        y = 16;
+    int x;
+    int x1 = 1, x2 = 8, x3 = 9;
 
     // Start Semantic Matching
-    y = (x > 5) ? y + x : y - x;
+    x = x1 + x2 - 6 + x3;
     // End Semantic Matching
+
+    printf("z = %d\n", x);
 
     return 0;
 }

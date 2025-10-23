@@ -28,7 +28,7 @@ int main()
         printf("Wrong Letter.");
     }
     // End Semantic Matching
-    
+
     printf("\n");
 
     return 0;
