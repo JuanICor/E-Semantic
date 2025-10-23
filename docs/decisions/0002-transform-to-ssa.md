@@ -4,7 +4,6 @@
 
 Althought tree_sitter is a powerfull tool for parsing, it brings some limitation when trying to look for the semantic value of a desired expression.That's why it was considered use SSA to construct the e-graph.
 
-<!-- This is an optional element. Feel free to remove. -->
 ## Decision Drivers
 
 * Semantic Analysis of certain expressions
