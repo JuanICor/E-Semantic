@@ -4,7 +4,7 @@ from llvm_parser.types import (PhiInstruction, ConditionalBranch,
                                AllocaInstruction, LoadInstruction,
                                StoreInstruction)
 
-from Classes.cfg import (Label, CFG, BasicBlock, Instruction, GammaInstruction,
+from Classes.graphs import (Label, CFG, BasicBlock, Instruction, GammaInstruction,
                          MuInstruction, EtaInstruction, MonadicAlloca,
                          MonadicLoad, MonadicStore, MGSAInstruction)
 

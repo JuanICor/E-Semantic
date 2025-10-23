@@ -2,8 +2,9 @@
 Invoker class for the egraph process
 """
 from llvm_parser.types import GlobalValues
-from Classes.cfg import CFG, BasicBlock
+from Classes.graphs.cfg import CFG, BasicBlock
 
+from .handlers import ParametersHandler
 from .handler_factory import InstructionsHandlerFactory, GlobalsHandlerFactory
 from .value_graph import ValueGraph, GlobalVariablesManager
 
@@ -32,6 +33,8 @@ class ValueGraphCreator:
         """Process a single function and return its ValueGraph"""
         processor, instruction_factory = self._create_function_processor()
 
+        self._process_parameters(cfg.parameters, ParametersHandler(processor))
+
         for basic_block in cfg.blocks():
             self._process_block(basic_block, instruction_factory)
 
@@ -43,6 +46,11 @@ class ValueGraphCreator:
         instructions_factory = InstructionsHandlerFactory(processor)
 
         return processor, instructions_factory
+
+    def _process_parameters(self, params: list[str | list[str]],
+                            handler: ParametersHandler) -> None:
+        for param in params:
+            handler.simple_parameter(param)
 
     def _process_block(self, block: BasicBlock,
                        factory: InstructionsHandlerFactory) -> None:

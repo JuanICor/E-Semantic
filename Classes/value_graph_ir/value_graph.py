@@ -65,6 +65,12 @@ class ValueGraph:
 
         return Leaf.state(state)
 
+    def add_parameter(self, parameter: str) -> None:
+        """Add a parameter to the value graph"""
+        parameter_value = Leaf.param(parameter)
+        self._add_node(parameter, parameter_value)
+
+
     def add_alloca_instruction(self, node: str, state: str,
                                input_state: str) -> None:
         """Add an alloca instruction to the value graph"""

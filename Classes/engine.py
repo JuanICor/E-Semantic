@@ -10,7 +10,7 @@ from llvm_parser.types import CFGFunction, GlobalValues
 from Classes.egraph_elements import Leaf as EGraphNode, graph_ruleset
 from Classes.process_file import FileProcessor
 from Classes.file_context import FileContext
-from Classes.cfg import CFG
+from Classes.graphs import CFG
 from Classes.mgsa_transformer import MGSATransformer
 from Classes.value_graph_ir import ValueGraph
 

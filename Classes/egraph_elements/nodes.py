@@ -2,13 +2,18 @@ from __future__ import annotations
 from typing import TypeAlias
 
 from egglog import Expr, function as eggFunction
-from egglog.builtins import i64Like, BoolLike, StringLike, Vec
+from egglog.builtins import i64Like, BoolLike, StringLike, Vec, Set
 from egglog.conversion import converter
 
-converter(list, Vec, lambda l: Vec(*l))
+converter(list, Vec, lambda lst: Vec(*lst))
+converter(set, Set, lambda st: Set(*st))
 
 
 class Leaf(Expr):
+
+    @classmethod
+    def param(cls, value: StringLike) -> Leaf:
+        ...
 
     @classmethod
     def int(cls, value: i64Like) -> Leaf:
@@ -32,7 +37,7 @@ Components: TypeAlias = Vec[Leaf] | list[Leaf]
 
 class Function(Expr):
 
-    def __init__(self, name: StringLike, traces: Components) -> None:
+    def __init__(self, name: StringLike, components: Components) -> None:
         ...
 
 

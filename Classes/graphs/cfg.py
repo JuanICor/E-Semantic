@@ -1,21 +1,25 @@
 from collections import defaultdict
-from collections.abc import Callable, Iterable
-from functools import reduce
-from typing import (Any, TypeAlias, NamedTuple, Generic, TypeVar, cast)
+from collections.abc import Iterable
+from typing import Any, Final, Generic, NamedTuple, TypeAlias, TypeVar, cast
 
-import graphviz
 import rustworkx as rx
-
-from llvm_parser.types import (CFGFunction, CFGBlock, BaseInstruction as
-                               BaseLLVMInstruction, UnconditionalBranch,
-                               ConditionalBranch, AllocaInstruction,
-                               LoadInstruction, StoreInstruction, Instructions
-                               as LLVMInstruction)
+from llvm_parser.types import (
+    AllocaInstruction,
+    CFGBlock,
+    CFGFunction,
+    ConditionalBranch,
+    LoadInstruction,
+    StoreInstruction,
+    UnconditionalBranch,
+)
+from llvm_parser.types import BaseInstruction as BaseLLVMInstruction
+from llvm_parser.types import Instructions as LLVMInstruction
 
 Label: TypeAlias = str
 GraphIndex: TypeAlias = int
 Cdg: TypeAlias = dict[Label, list[Label]]
 BranchInstruction: TypeAlias = ConditionalBranch | UnconditionalBranch
+DominatorsCache: TypeAlias = dict[tuple[GraphIndex, GraphIndex], bool]
 
 InstructionT = TypeVar('InstructionT', bound=BaseLLVMInstruction)
 
@@ -89,6 +93,41 @@ class _BackEdge(NamedTuple):
     """A loops BackEdge"""
     head: GraphIndex
     tail: GraphIndex
+
+
+class DominatorsChecker:
+    """Check Dominance relationship for a given Graph"""
+
+    def __init__(self, graph: rx.PyDiGraph["BasicBlock", None]):
+        self.entry_node: Final = 0
+        self.idoms: Final = rx.immediate_dominators(graph, 0)
+        self._dom_cache: DominatorsCache = {}
+
+    def dominates(self, dom: GraphIndex, node: GraphIndex) -> bool:
+        key = (dom, node)
+
+        if key in self._dom_cache:
+            return self._dom_cache[key]
+
+        result = self._compute_dominance(dom, node)
+        self._dom_cache[key] = result
+        return result
+
+    def _compute_dominance(self, dom: GraphIndex, node: GraphIndex) -> bool:
+        """Helper method to compute dominance relationship"""
+        curr = node
+
+        while curr != self.entry_node:
+            if curr == dom:
+                return True
+
+            cached_key = (dom, curr)
+            if cached_key in self._dom_cache:
+                return self._dom_cache[cached_key]
+
+            curr = self.idoms[curr]
+
+        return dom == self.entry_node
 
 
 class Instruction(Generic[InstructionT]):
@@ -204,6 +243,8 @@ class CFG:
         self.parameters = function['params']
         self.ret_type = function['ret_type']
         self.is_declaration = not function.get('blocks')
+        self._entry_blocks: list[GraphIndex] = []
+        self._exit_blocks: list[GraphIndex] = []
 
         self._graph: rx.PyDiGraph[BasicBlock,
                                   None] = rx.PyDiGraph(multigraph=False)
@@ -227,10 +268,19 @@ class CFG:
             self._block_to_index[name] = idx
             self._index_of_block[idx] = name
 
+            if not bb.preds:
+                self._entry_blocks.append(idx)
+            if not bb.succs:
+                self._exit_blocks.append(idx)
+
         for name, block_data in blocks_items:
             src_idx = self._block_to_index[name]
             for succ in block_data["succ"]:
                 self._graph.add_edge(src_idx, self._block_to_index[succ], None)
+
+    @property
+    def is_closed(self) -> bool:
+        return len(self._entry_blocks) == 1 and len(self._exit_blocks) == 1
 
     def get_block(self, label: Label) -> BasicBlock:
         """Returns the BasicBlock corresponding with the given label"""
@@ -272,14 +322,19 @@ class CFG:
         return rx.dominance_frontiers(reverse_graph,
                                       self._graph.num_nodes() - 1)
 
+    def strongly_conected_components(self) -> list[list[BasicBlock]]:
+        sccs = rx.strongly_connected_components(self._graph)
+
+        return [list(map(self._index_of_block, scc)) for scc in sccs]
+
     def loops(self) -> list[LoopInfo]:
         """Get Natural Loops information in the CFG"""
-        dom = self._compute_dominators()
+        dom_checker = DominatorsChecker(self._graph)
         loops: list[LoopInfo] = []
-        is_back_edge: Callable[[int, int], bool] = lambda x, y: y in dom[x]
+        is_back_edge = dom_checker.dominates
 
         for head, tail in self._graph.edge_list():
-            if is_back_edge(head, tail):
+            if is_back_edge(tail, head):
                 loops.append(
                     LoopInfo(entry=self._index_of_block[tail],
                              condition=self._get_loop_condition(
@@ -287,30 +342,6 @@ class CFG:
                              loop_nodes=self._get_nodes_in_loop(tail, head)))
 
         return loops
-
-    # TODO: Change algorithm to Lengaur-Tarjan
-    def _compute_dominators(self) -> dict[GraphIndex, set[GraphIndex]]:
-        dom = {0: {0}}
-        all_nodes = self._graph.node_indices()
-
-        for node in all_nodes[1:]:
-            dom[node] = set(all_nodes)
-
-        while True:
-            changed = False
-            for node in all_nodes[1:]:
-                preds = self._graph.predecessor_indices(node)
-                new_dom = {node} | reduce(set.intersection,
-                                          (dom[p] for p in preds))
-
-                if new_dom != dom[node]:
-                    dom[node] = new_dom
-                    changed = True
-
-            if not changed:
-                break
-
-        return dom
 
     def _get_loop_condition(self, back_edge: _BackEdge) -> str:
 
@@ -363,50 +394,18 @@ class CFG:
             graph_attr={'rankdir': 'TB'}  # Top to Bottom layout
         )
 
-    def save_dot(self, filename: str) -> None:
-        """
-        Save the DOT representation to a file
-        """
-        with open(filename, 'w', encoding='utf-8') as file:
-            file.write(self.to_dot())
-
-    def visualize_cfg(self,
-                      filename: str | None = None,
-                      extension: str = 'png') -> None:
-        """
-        Generate a visual representation of the CFG
-        Requires graphviz to be installed: pip install graphviz
-        """
-        dot_source = self.to_dot()
-
-        if filename:
-            # Remove extension if provided
-            name = filename.rsplit('.', 1)[0]
-        else:
-            name = f"cfg_{self.name}"
-
-        graph = graphviz.Source(dot_source)
-        graph.render(filename=name, format=extension, cleanup=True)
-        print(f"CFG visualization saved as {name}.{extension}")
-
 
 if __name__ == "__main__":
     #Load complex and get the loop info from it
     import json
 
-    with open('mult.json', 'r', encoding='utf-8') as f:
+    with open('complex.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
 
     # Get the first function from the loaded data
     function_data = data['functions'][0]
 
-    # Create CFG from the function data
+    # Create CFG from the function datatail
     cfg = CFG(function_data)
 
-    loops = cfg.loops()
-
-    for info in loops:
-        print(f"Entry Node: {info.entry}")
-        print(f"Loop Condition: {info.condition}")
-        print(f"Nodes in Loop: {info.loop_nodes}")
-        print("---" * 20)
+    print(f"Loops: {cfg.loops()}")

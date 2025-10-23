@@ -12,7 +12,7 @@ from llvm_parser.types import (GlobalValues, GlobalString, GlobalStruct,
                                ConditionalBranch, UnconditionalBranch,
                                ReturnInstruction)
 
-from Classes.cfg import (MGSAInstruction, MonadicLoad, MonadicStore,
+from Classes.graphs.cfg import (MGSAInstruction, MonadicLoad, MonadicStore,
                          MonadicAlloca, GammaInstruction, MuInstruction)
 
 from Classes.egraph_elements import (Leaf, add, sub, mul, truncate, equals,
@@ -52,6 +52,15 @@ class GlobalStringHandler(GlobalVariablesHandler):
 
         self._globals_manager.add_global_string(identifier, value)
 
+
+class ParametersHandler:
+    """Handles function parameters"""
+
+    def __init__(self, value_graph: ValueGraph) -> None:
+        self._value_graph = value_graph
+
+    def simple_parameter(self, param: str) -> None:
+        self._value_graph.add_parameter(param)
 
 class ValueGraphNodesHandler(ABC):
     """Handles different instruction nodes of ValueGraph"""
@@ -148,8 +157,8 @@ class BinaryOpsHandler(ValueGraphNodesHandler):
     @override
     def upload(self, node_data: BinaryInstruction) -> None:
         node = node_data["ret_reg"]
-        left_arg = node_data["arg_1"]
-        right_arg = node_data["arg_2"]
+        left_arg = node_data["lhs"]
+        right_arg = node_data["rhs"]
 
         self._value_graph.add_binary_op(node, self.operation, left_arg,
                                         right_arg)
@@ -197,10 +206,10 @@ class CompareHandler(ValueGraphNodesHandler):
     def upload(self, node_data: CompareInstruction) -> None:
         node = node_data["ret_reg"]
         comparison = self.operations[node_data["comp_op"]]
-        arg_1 = node_data["arg_1"]
-        arg_2 = node_data["arg_2"]
+        lhs = node_data["lhs"]
+        rhs = node_data["rhs"]
 
-        self._value_graph.add_comparison(node, comparison, arg_1, arg_2)
+        self._value_graph.add_comparison(node, comparison, lhs, rhs)
 
 
 class BranchHandler(ValueGraphNodesHandler):

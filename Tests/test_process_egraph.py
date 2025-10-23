@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from egglog import EGraph, Ruleset
 
-from Classes.process_egraph import *
+from Classes.value_graph_ir import *
 from Tests.utils import create_mock_object
 
 
@@ -35,7 +35,7 @@ def test_invoker():
                                             "StoreMock",
                                             mock_returns=[("execute", None)])
 
-    invoker = HandlerInvoker()
+    invoker = ValueGraphCreator()
 
     invoker.register_handler("add", mock_add_handler)
 
@@ -80,7 +80,7 @@ def test_integration(mock_egraph_class):
     mock_egraph_class.return_value = mock_egraph_instance
 
     # Set Up
-    invoker = HandlerInvoker()
+    invoker = ValueGraphCreator()
     processor = EgraphProcessor(mock_ruleset)
     handlers = [("sub", SubHandler()), ("call", CallHandler()),
                 ("store", StoreHandler()), ("load", LoadHandler())]

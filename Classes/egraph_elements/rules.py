@@ -38,7 +38,7 @@ def arithmetic_ruleset(x: i64, y: i64, l1: Leaf, l2: Leaf,
 
 
 @ruleset
-def boolean_ruleset(b: Leaf) -> Iterable:
+def boolean_ruleset(b: Leaf, x: i64, y: i64) -> Iterable:
     return [
         # ¬
         rewrite(neg(neg(b))).to(b),
@@ -47,7 +47,9 @@ def boolean_ruleset(b: Leaf) -> Iterable:
         rewrite(neg(Leaf.int(0))).to(Leaf.int(1)),
         rewrite(neg(Leaf.int(1))).to(Leaf.int(0)),
         # ==
-        rewrite(equals(b, b)).to(Leaf.bool(True))
+        rewrite(equals(b, b)).to(Leaf.bool(True)),
+        rewrite(equals(Leaf.int(x), Leaf.int(y))).to(Leaf.bool(True), eq(x).to(y)),
+        rewrite(equals(Leaf.int(x), Leaf.int(y))).to(Leaf.bool(False), ne(x).to(y)),
     ]
 
 
