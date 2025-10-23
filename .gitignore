@@ -1,2 +1,55 @@
-apunte.txt
-.mypy_cache
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.pyw
+.coverage
+
+# Virtual environment
+venv/
+env/
+.venv/
+env.bak/
+.venv.bak/
+
+# Compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Python packages
+*.egg-info/
+dist/
+.mypy_cache/
+.pytest_cache/
+linters_results/
+
+# IDEs
+.vscode/
+.idea/
+
+# Editor-specific
+*.swp
+*~
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Temporary files
+*.bak
+*.bak.*
+*.swp
+*~
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
+
+# Personal
+Notas/
+*.pdf
