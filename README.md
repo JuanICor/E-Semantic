@@ -13,6 +13,8 @@
 8. If / Else and Switch Statements
 9. Control Flow Statements
 10. Statements Permutation
+11. Superfluous Parentheses
+12. Pointer Expressions
 
 ## Future Works
 
