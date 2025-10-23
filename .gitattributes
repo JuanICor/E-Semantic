@@ -1,0 +1,17 @@
+docs/bibliography/Reynolds_theories_of_programming_languages.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Semantic_Program_Alignment_for_Equivalent_Checking.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Abstract_interpretation_theory.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Datalog_Flix.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Egg_Fast_and_Extensible_Equality_Saturation.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Evaluating_Value-Graph_Translation_Validation_for_LLVM.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Point-to-analysis.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/RVSDG_An_Intermediate_Representation_for_Optimizing_Compilers.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Semantic_Code_Search_via_Equational_Reasoning.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Abstract_Interpretation_basics.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Better_together.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Equality_Saturation_A_new_approach_to_optimization.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Intro_Abstract_Interpretation.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Datalog_program_analysis.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Equality-Based_Translation_Validator_for_LLVM.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Nominal_rewriting.pdf filter=lfs diff=lfs merge=lfs -text
+docs/bibliography/Perfect_Reconstructability_of_Control_Flow_from_Demand.pdf filter=lfs diff=lfs merge=lfs -text
